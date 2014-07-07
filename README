@@ -1,0 +1,59 @@
+---------------------------------
+About
+---------------------------------
+
+  sagging, что означает `провисание` - программа, участвующая
+  при проектировании однонитевых тросовых подвесок.
+
+---------------------------------
+Compiling
+---------------------------------
+
+  Для компиляции вам потребуется GHC.
+  Сама компиляция осуществляется таким образом:
+
+  ghc -XFlexibleContexts src/sagging-linux.hs
+
+---------------------------------
+Installing
+---------------------------------
+
+  После распаковки архива выполните команду
+  
+  chmod +x sagging-linux
+
+---------------------------------
+Launching
+---------------------------------
+
+  Для запуска выполните 
+
+  ./sagging-linux
+  
+  Введите все необходимые вам данные и нажмите `OK`.
+  В случае некорректного ввода данных вы получите
+  сообщение об ошибке. В случае перегруза вы получите
+  сообщение о перегрузе. В случае корректного ввода
+  приложение сформирует окно предпросмотра результата
+  вашего ввода данных с сопутствующими графиками.
+  Кнопка `Печать` сформирует файл формата PostScript 
+  `out.ps` в той же директории, из которой вы 
+  запускаете приложение.
+
+---------------------------------
+License
+---------------------------------
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
