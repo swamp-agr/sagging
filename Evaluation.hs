@@ -46,7 +46,7 @@ data InputParams = InputParams
 processInitConditions :: InitialConditions -> InputParams
 processInitConditions a 
   | (nub $ filter (/= (Just "")) $ filter (/= Nothing) $ (errors a ++ [(forceError a)])) == [] = 
-        InputParams (process $ line a) (process $ saggingCoeff a) (process $ extremWinterTemp a)
+        InputParams (process $ iLine a) (process $ saggingCoeff a) (process $ extremWinterTemp a)
         (process $ extremSummerTemp a) (process $ iceDepth a) (process $ mountingTemp a) 
         (process $ windPressure a) (stringValue $ fiberType' a) (process $ fiberSpacing a)
         (process $ forceCounter a) 
