@@ -10,6 +10,7 @@ import Prelude hiding (putStr)
 import Data.ByteString.Char8 (putStr)
 import Data.ByteString.UTF8 (fromString)
 import Data.List (transpose, intersperse)
+import Text.Printf 
 
 print' = putStr . fromString
 
@@ -360,10 +361,10 @@ fromMaybe (Just a) = a
 
 printResult res err f = do 
   set f [text := "Результат", clientSize := sz 400 650]
-  p <- panel f [on paint := drawItems, position := pt 0 0, clientSize := sz 400 650]
+  p <- panel f [on paint := drawItems res, position := pt 0 0, clientSize := sz 400 650]
 
   b1 <- button p [ text := "Печать"
-                 , on command := fileSave f
+                 , on command := fileSave f res
                  , position := pt 50 600]
   b2 <- button p [ text := "Выход"
                  , on command := close f
@@ -371,7 +372,7 @@ printResult res err f = do
                  ]
   set f [layout := minsize (sz 400 650) $ hfill $ vfill $ widget p]
 
-fileSave p = 
+fileSave p res = 
   do t <- fileSaveDialog p True True "Сохранить" [("Любое изображение", [ 
                                                       "*.png"
                                                       , "*.tiff"
@@ -380,7 +381,7 @@ fileSave p =
      mdc <- memoryDCCreate
      mdcbmp <- bitmapCreateEmpty (sz 400 600) (-1)
      memoryDCSelectObject mdc mdcbmp
-     drawItems' mdc     
+     drawItems' res mdc
      
      case t of
        Just a -> do bitmapSaveFile mdcbmp (a) wxBITMAP_TYPE_PNG objectNull
@@ -389,10 +390,10 @@ fileSave p =
      print $ show t
      return ()
 
-drawItems dc _ = do
-  drawItems' dc
+drawItems a dc _ = do
+  drawItems' a dc 
 
-drawItems' dc = do
+drawItems' a dc = do
   polygon dc [ Point 0 0
              , Point 400 0
              , Point 400 650
@@ -428,22 +429,29 @@ drawItems' dc = do
     ]
   mapM_ (text' dc ) [ ("При наиболее тяжёлых условиях", Point 90 270, [fontFamily := FontModern, fontShape := ShapeItalic])
                     , ("Линия провисания нити (троса)", Point 90 150, [fontFamily := FontModern, fontShape := ShapeItalic])
-                    , ("Температура\t\t\t\t\t°С\t5", Point 40 290, [fontFamily := FontModern])
-                    , ("Толщина льда\t\t\t\tмм\t1", Point 40 310, [fontFamily := FontModern])
-                    , ("Давление ветра\t\t\t\tН/м\t206", Point 40 330, [fontFamily := FontModern])
-                    , ("Допускаемое значение силы\tН\t4840", Point 40 350, [fontFamily := FontModern])
-                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 370, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
-                    , ("При экстр. низкой т-ре\t\t°С\t5", Point 40 390, [fontFamily := FontModern, fontShape := ShapeItalic])
-                    , ("Сила натяжения нити\t\tН\t4840", Point 40 410, [fontFamily := FontModern])
-                    , ("Допускаемое значение силы\tН\t4840", Point 40 430, [fontFamily := FontModern])
-                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 450, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
-                    , ("Результаты расчёта жесткости (стрелы провисания)", Point 45 470, [fontFamily := FontModern, fontSize := 8, fontShape := ShapeItalic])
-                    , ("\t\t\t\t1\t\t2\t\t3\t\t4", Point 20 490, [fontFamily := FontModern])
-                    , ("Температура\t\t-5.0\t\t-30.0\t40.0\t\t15.0", Point 20 510, [fontFamily := FontModern])
-                    , ("Коэфф. провеса\t40.00\t44.61\t35.76\t38.91", Point 20 530, [fontFamily := FontModern])
-                    , ("Провисание нити\t0.25\t\t0.22\t\t0.28\t\t0.26", Point 20 550, [fontFamily := FontModern])
+                    , ("Температура\t\t\t\t\t°С\t" ++ (show $ _iceTemp $ allParams a), Point 40 290, [fontFamily := FontModern])
+                    , ("Толщина льда\t\t\t\tмм\t" ++ (show $ _iceDepth $ allParams a), Point 40 310, [fontFamily := FontModern])
+                    , ("Давление ветра\t\t\t\tН/м\t" ++ (show $ _windPressure $ allParams a), Point 40 330, [fontFamily := FontModern])
+                    , ("Сила натяжения нити\t\tН\t" ++ (roundToStr $ _horizReact $ allParams a), Point 40 350, [fontFamily := FontModern])
+                    , ("Допускаемое значение силы\tН\t" ++ (show $ _approvedForce $ allParams a), Point 40 370, [fontFamily := FontModern])
+                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 390, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
+                    , ("При экстр. низкой т-ре\t\t°С\t" ++ (show $ _xWTemp $ allParams a), Point 40 410, [fontFamily := FontModern, fontShape := ShapeItalic])
+                    , ("Сила натяжения нити\t\tН\t" ++ (roundToStr $ _oh $ (outParams a) !! 0), Point 40 430, [fontFamily := FontModern])
+                    , ("Допускаемое значение силы\tН\t" ++ (show $ _approvedForce $ allParams a), Point 40 450, [fontFamily := FontModern])
+                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 470, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
+                    , ("Результаты расчёта жесткости (стрелы провисания)", Point 45 490, [fontFamily := FontModern, fontSize := 8, fontShape := ShapeItalic])
+                    , ("\t\t\t\t1\t\t2\t\t3\t\t4", Point 20 510, [fontFamily := FontModern])
+                    , ("Температура\t\t" ++ (show $ _iceTemp $ allParams a) 
+                       ++ "\t\t" ++ (show $ _xWTemp $ allParams a) 
+                       ++ "\t" ++ (show $ _xSTemp $ allParams a) 
+                       ++ "\t\t" ++ (show $ _mTemp $ allParams a), Point 20 530, [fontFamily := FontModern])
+                    , ("Коэфф. провеса\t" ++ (roundToStr $ _ok $ (outParams a) !! 0) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 1) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 2) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 3), Point 20 550, [fontFamily := FontModern])
+                    , ("Провисание нити\t" ++ (roundToStr $ _of $ (outParams a) !! 0) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 1) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 2) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 3) , Point 20 570, [fontFamily := FontModern])
                     ]
   return ()
      
 text' dc (t,p1,prop) = drawText dc t p1 prop
 line' dc t (p1, p2) = line dc p1 p2 t
+
+roundToStr :: (PrintfArg a, Floating a) => a -> String
+roundToStr f = printf "%0.2f" f
