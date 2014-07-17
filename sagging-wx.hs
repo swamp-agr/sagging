@@ -445,9 +445,34 @@ drawItems' a dc = do
                        ++ "\t\t" ++ (show $ _xWTemp $ allParams a) 
                        ++ "\t" ++ (show $ _xSTemp $ allParams a) 
                        ++ "\t\t" ++ (show $ _mTemp $ allParams a), Point 20 530, [fontFamily := FontModern])
-                    , ("Коэфф. провеса\t" ++ (roundToStr $ _ok $ (outParams a) !! 0) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 1) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 2) ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 3), Point 20 550, [fontFamily := FontModern])
-                    , ("Провисание нити\t" ++ (roundToStr $ _of $ (outParams a) !! 0) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 1) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 2) ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 3) , Point 20 570, [fontFamily := FontModern])
+                    , ("Коэфф. провеса\t" ++ (roundToStr $ _ok $ (outParams a) !! 0) 
+                       ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 1) 
+                       ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 2) 
+                       ++ "\t" ++ (roundToStr $ _ok $ (outParams a) !! 3), Point 20 550, [fontFamily := FontModern])
+                    , ("Провисание нити\t" ++ (roundToStr $ _of $ (outParams a) !! 0) 
+                       ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 1) 
+                       ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 2) 
+                       ++ "\t\t" ++ (roundToStr $ _of $ (outParams a) !! 3), Point 20 570, [fontFamily := FontModern])
                     ]
+  let ax = fst (_saggingLine $ allParams a)
+      ay = snd (_saggingLine $ allParams a)
+      lx = abs (head ax - max')
+      max' = maximum $ map abs ax
+      half' = max' / 2
+      ly = abs (head ay - last ay)
+      bx = map (floor . (+180.0) . (/ lx) . (* 70.0) . negate) ax
+      by = map (floor . (+40.0) . (/ ly) . (* 320.0)) ay
+      cz = zip by bx
+      pts = map (\(x,y) -> Point x y) cz
+    in do polyline dc pts [ penCap := CapButt
+                       , penKind := PenSolid
+                       , penWidth := 2
+                       , color := rgb 0 0 0
+                       ]
+          mapM_ (text' dc) [ (roundToStr half', Point 8 205, [fontFamily := FontModern])
+                           , (roundToStr max', Point 8 240, [fontFamily := FontModern])
+                           ]
+
   return ()
      
 text' dc (t,p1,prop) = drawText dc t p1 prop
