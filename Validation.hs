@@ -31,7 +31,7 @@ data InitialLine = InitialLine { coord'' :: InitialValue
                                } deriving (Show, Eq, Ord)
 
 data InitialConditions = InitialConditions 
-                         { line :: InitialValue
+                         { iLine :: InitialValue
                          , saggingCoeff :: InitialValue
                          , extremWinterTemp :: InitialValue
                          , extremSummerTemp :: InitialValue
@@ -106,7 +106,7 @@ initialConditions' "Тип провода 1..6" b (Intervaling:[]) e
   | otherwise = Just ("Величина Тип провода 1..6 неправильно задана.")
 initialConditions' "Число сил" b (Intervaling:[]) e
   | toD b <= 10 && toD b >= 0 = Nothing
-  | otherwise = Just ("Величина Число сосредоточенных сил неправильно задана.")
+  | otherwise = Just ("Величина Число сил неправильно задана.")
 
 toD :: String -> Double
 toD a = read a :: Double
@@ -118,9 +118,9 @@ forceConditions :: [InitialForce] -> [InitialLine] -> InitialValue -> Maybe Stri
 forceConditions a b e 
   | length e' == 0 = Just ("Величина Число сил не задана.")
   | isNumeric e' == False = Just ("Величина Число сил не задана.")
-  | g == 0 = Just ("Величина Число сил не задана.")
   | g > 0 && g /= (read e' :: Int)  && (isNumeric e' == True) =  Just ("Нажмите кнопку \"Добавить\".")
   | g > 0 && g == (read e' :: Int) && (isNumeric e' == True) = Nothing
+  | length h' > 0 = Nothing
   | length h == 0 && length h' == 0 = Just ("Для продолжения необходимо задать нагрузку.")
     where h = zip (f $ map coord' a) (f $ map force' a)
           h' = f $ map coord'' b
