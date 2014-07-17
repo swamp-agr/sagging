@@ -1,16 +1,14 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
---import Data.Text
 import Control.Applicative
 import Graphics.UI.WX
---import Validation
---import Evaluation
+import Graphics.UI.WXCore
+import Validation
+import Evaluation
 import Control.Concurrent.Chan
 import Prelude hiding (putStr)
 import Data.ByteString.Char8 (putStr)
 import Data.ByteString.UTF8 (fromString)
-import Validation
-import Evaluation
 import Data.List (transpose, intersperse)
 
 print' = putStr . fromString
@@ -144,15 +142,7 @@ rowToInitBy (a,b,c) = rowToInit (a !! b) c
 rowToInitLBy (a,b,c) = rowToInitL (a !! b) c
 
 extractInitial init1 fiberType fiberDelta init2 forceCount init3
-  = do line <- rowToInit (init1 !! 0) [Digit, Positive]
-       saggingCoeff <- rowToInit (init1 !! 1) [Integer, Positive, Intervaling]
-       extremWinterTemp <- rowToInit (init1 !! 2) [Digit]
-       extremSummerTemp <- rowToInit (init1 !! 3) [Digit]
-       iceDepth <- rowToInit (init1 !! 4) [Digit, Positive]
-       mountingTemp <- rowToInit (init1 !! 5) [Digit, Positive]
-       windPressure <- rowToInit (init1 !! 6) [Digit, Positive]
-
-       t1 <- (mapM rowToInitBy $ zip3 (repeat $ init1 ++ [fiberType, fiberDelta
+  = do t1 <- (mapM rowToInitBy $ zip3 (repeat $ init1 ++ [fiberType, fiberDelta
                                                          , forceCount]) [0..] 
                                               initRestrictions)
        t2 <- mapM rowToInitLBy $ zip3 (repeat init2) [0..] 
@@ -187,13 +177,12 @@ getOutParams a b
   | (filter (/= Nothing) $ pErrors a) /= [] = 
     do set b [text := "!!! ОШИБКА !!!"]
        a' <- staticText b [text := concat $ intersperse "\n" $ (filter (/= "") $ map fromMaybe $ pErrors a)]
-       --pack a' [Side AtTop, Fill X]
-
        b3 <- button b [ text := "Выход", on command := close b]
-       set b [ layout := margin 1 $ column 1 [floatCenter $ widget a', floatCenter $ widget b3 ] ]
+       set b [ layout := margin 1 $ minsize (sz 300 200) $ column 1 [floatCenter $ minsize (sz 350 200) $ widget a', floatCenter $  widget b3 ] ]
        return ()
   | otherwise = 
-    do let aParams = getAllParams a
+    do print "1"
+       let aParams = getAllParams a
            o1 = getOut1 aParams
            e1 = getEquiv1 aParams
            o2 = getOut2 aParams o1 e1
@@ -206,7 +195,7 @@ getOutParams a b
            print' :: (Show a) => a -> IO ()
            print' = putStr . fromString . (++ "\n\n") . show 
          in do print' aParams
---               printResult al oe b
+               printResult al oe b
                {-print' o1
                print' e1
                print' o2
@@ -215,66 +204,67 @@ getOutParams a b
                print' e3
                print' o4-}
        return ()
+
                    
+{-
+printResult :: CResult -> OverLoadError -> Frame () -> IO ()
+printResult a Nothing b = 
+  do p <- panel b []
+     canv <- newCanvas p [size := (sz 14 18), background := "white"]
+     
+     -- нить
+     createLine canv [coord [(cm 2, cm 2), (cm 12, cm 2)],                           
+                      outlinewidth (mm 1), filling "blue"]
+     -- насечки
+     createLine canv [coord [(cm 2, cm 1.7), (cm 2, cm 2.3)], filling "black", outlinewidth (mm 1)]
+     createLine canv [coord [(cm 12, cm 1.7), (cm 12, cm 2.3)], filling "black", outlinewidth (mm 1)]
+     -- дополнительные линии
+     createLine canv [coord [(cm 2, cm 2), (cm 2, cm 4.1)], filling "black"]
+     createLine canv [coord [(cm 12, cm 2), (cm 12, cm 4.1)], filling "black"]
+     createLine canv [coord [(cm 2, cm 4), (cm 12, cm 4)], filling "black", arrowstyle BothEnds]
+     let aa = zip (map cm $ repeat 2.0) (map (cm) [1.7, 1.8 .. 2.3])
+         az = zip (map cm $ repeat 1.7) (map (cm) [1.4, 1.5 .. 2.0]) 
+              
+         ba = zip (map cm $ repeat 12.0) (map (cm) [1.7, 1.8 .. 2.3])
+         bz = zip (map cm $ repeat 12.3) (map (cm) [2.0, 2.1 .. 2.6]) 
+         mapp [] [] = []
+         mapp (a:as) (b:bs) = [[a,b]] ++ mapp as bs
+         crd1 = mapp aa az
+         crd2 = mapp ba bz
+         crLine a b = createLine a [coord b, filling "black"]
+       in do mapM_ (crLine canv) crd1  
+             mapM_ (crLine canv) crd2 
 
--- printResult :: CResult -> OverLoadError -> Frame () -> IO ()
--- printResult a Nothing b = 
---   do canv <- newCanvas b [size (cm 14, cm 18), background "white"]
---      f <- newFrame b []
--- 
---      -- нить
---      createLine canv [coord [(cm 2, cm 2), (cm 12, cm 2)],                           
---                       outlinewidth (mm 1), filling "blue"]
---      -- насечки
---      createLine canv [coord [(cm 2, cm 1.7), (cm 2, cm 2.3)], filling "black", outlinewidth (mm 1)]
---      createLine canv [coord [(cm 12, cm 1.7), (cm 12, cm 2.3)], filling "black", outlinewidth (mm 1)]
---      -- дополнительные линии
---      createLine canv [coord [(cm 2, cm 2), (cm 2, cm 4.1)], filling "black"]
---      createLine canv [coord [(cm 12, cm 2), (cm 12, cm 4.1)], filling "black"]
---      createLine canv [coord [(cm 2, cm 4), (cm 12, cm 4)], filling "black", arrowstyle BothEnds]
---      let aa = zip (map cm $ repeat 2.0) (map (cm) [1.7, 1.8 .. 2.3])
---          az = zip (map cm $ repeat 1.7) (map (cm) [1.4, 1.5 .. 2.0]) 
---               
---          ba = zip (map cm $ repeat 12.0) (map (cm) [1.7, 1.8 .. 2.3])
---          bz = zip (map cm $ repeat 12.3) (map (cm) [2.0, 2.1 .. 2.6]) 
---          mapp [] [] = []
---          mapp (a:as) (b:bs) = [[a,b]] ++ mapp as bs
---          crd1 = mapp aa az
---          crd2 = mapp ba bz
---          crLine a b = createLine a [coord b, filling "black"]
---        in do mapM_ (crLine canv) crd1  
---              mapM_ (crLine canv) crd2 
--- 
---      -- отображение схематичных сил
---      let aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
---          l = (_line $ allParams a)
---          onLine a = [(a, cm 1.3), (a, cm 2)]
---          lConf a = [coord a, filling "black", arrowstyle LastEnd]
---        in do mapM_ (createLine canv) aa
---              
---      -- отображение схематичных линий        
---      let lConf a = [coord a, filling "black", arrowstyle LastEnd]        
---          rConf = map (\a -> [coord a, filling "black"])
---          lforces = filter ((== IsLine) . pType) $ _force $ allParams a
---          l = (_line $ allParams a)
---          aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') lforces
---          crossLine a = map (\d -> [(cm $ c + 0.2 + 0.1 * (d - 1), cm 1.5), (cm $ c - 0.2 + 0.1 * (d - 1), cm 2.5)]) [0 .. fromIntegral (b-1)]
---            where   c = ((+2.0) . (/l) . (* 10.0) . pCoord') a
---                    b = pNumLines a
---          ab = concat $ map (rConf . crossLine) lforces
---          onLine a = [(a, cm 1.3), (a, cm 2)]
---          lXLine a  = (a, cm 2.3)
---          lXForce a = (a, cm 1.0)
---          la = map (lXLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams a
---          tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
---          fa = map (lXForce . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams a
---          tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
---          drawText a = createTextItem canv [position (fst a), text (snd a), font (Helvetica, 10::Int)]
---        in do mapM (createLine canv) aa
---              mapM (createLine canv) ab
---              mapM drawText $ zip la tla
---              mapM drawText $ zip fa tfa             
+     -- отображение схематичных сил
+     let aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
+         l = (_line $ allParams a)
+         onLine a = [(a, cm 1.3), (a, cm 2)]
+         lConf a = [coord a, filling "black", arrowstyle LastEnd]
+       in do mapM_ (createLine canv) aa
 
+     -- отображение схематичных линий        
+     let lConf a = [coord a, filling "black", arrowstyle LastEnd]        
+         rConf = map (\a -> [coord a, filling "black"])
+         lforces = filter ((== IsLine) . pType) $ _force $ allParams a
+         l = (_line $ allParams a)
+         aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') lforces
+         crossLine a = map (\d -> [(cm $ c + 0.2 + 0.1 * (d - 1), cm 1.5), (cm $ c - 0.2 + 0.1 * (d - 1), cm 2.5)]) [0 .. fromIntegral (b-1)]
+           where   c = ((+2.0) . (/l) . (* 10.0) . pCoord') a
+                   b = pNumLines a
+         ab = concat $ map (rConf . crossLine) lforces
+         onLine a = [(a, cm 1.3), (a, cm 2)]
+         lXLine a  = (a, cm 2.3)
+         lXForce a = (a, cm 1.0)
+         la = map (lXLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams a
+         tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
+         fa = map (lXForce . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams 
+         tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
+         drawText a = createTextItem canv [position (fst a), text (snd a), font (Helvetica, 10::Int)]
+       in do mapM (createLine canv) aa
+             mapM (createLine canv) ab
+             mapM drawText $ zip la tla
+             mapM drawText $ zip fa tfa             
+-}
 
 rowToInit :: GRow -> [AConf] -> IO InitialValue
 rowToInit (GRow1 a _ c) d = do
@@ -283,9 +273,10 @@ rowToInit (GRow1 a _ c) d = do
   _state <- get (c) enabled
   return (InitialValue (show _value) _name (getState _state) d)
 rowToInit (GRow2 a) b = do
-  _value <- get a selection
-  _state <- get a enabled
-  return (InitialValue (show _value) "Тип нити" (getState _state)  b)
+  _select <- get a selection
+  _list   <- get a items
+  _state  <- get a enabled
+  return (InitialValue (_list !! _select) "Тип нити" (getState _state)  b)
 rowToInit (GRow5 a b c d) e = do
   _name <- get a text
   _value <- get c selection
@@ -306,8 +297,8 @@ main :: IO ()
 main
   = start hello
 
-hello :: IO ()
-hello
+
+hello 
   = do f     <- frame    [text := "Программа расчёта однонитевых тросовых подвесок сети наружного освещения с учётом ветровых, ледовых и температурных нагрузок", clientSize := sz 600 680]
 --       p <- panel f [] 9
        title <- staticText f [text := "Программа расчёта однонитевых тросовых\n    подвесок сети наружного освещения"]
@@ -366,3 +357,93 @@ hello
 fromMaybe :: (Maybe String) -> String
 fromMaybe Nothing = ""
 fromMaybe (Just a) = a
+
+printResult res err f = do 
+  set f [text := "Результат", clientSize := sz 400 650]
+  p <- panel f [on paint := drawItems, position := pt 0 0, clientSize := sz 400 650]
+
+  b1 <- button p [ text := "Печать"
+                 , on command := fileSave f
+                 , position := pt 50 600]
+  b2 <- button p [ text := "Выход"
+                 , on command := close f
+                 , position := pt 250 600
+                 ]
+  set f [layout := minsize (sz 400 650) $ hfill $ vfill $ widget p]
+
+fileSave p = 
+  do t <- fileSaveDialog p True True "Сохранить" [("Любое изображение", [ 
+                                                      "*.png"
+                                                      , "*.tiff"
+                                                      , "*.jpg"
+                                                      ,  "*.bmp" ])] "" "test1.png"
+     mdc <- memoryDCCreate
+     mdcbmp <- bitmapCreateEmpty (sz 400 600) (-1)
+     memoryDCSelectObject mdc mdcbmp
+     drawItems' mdc     
+     
+     case t of
+       Just a -> do bitmapSaveFile mdcbmp (a) wxBITMAP_TYPE_PNG objectNull
+                    return ()
+       Nothing -> return ()
+     print $ show t
+     return ()
+
+drawItems dc _ = do
+  drawItems' dc
+
+drawItems' dc = do
+  polygon dc [ Point 0 0
+             , Point 400 0
+             , Point 400 650
+             , Point 0 650
+             ] 
+    [ penCap := CapButt
+    , penKind := PenSolid
+    , color := rgb 255 255 255
+    ]
+
+  mapM_ (line' dc [ penCap := CapButt
+                  , penKind := PenSolid
+                  , penWidth := 3
+                  , color := rgb 0 0 255
+                  ]) [ (Point 40 40, Point 360 40) 
+                     ]
+  
+  mapM_ (line' dc [ penCap := CapButt
+                  , penKind := PenDash DashDot
+                  , penWidth := 2
+                  , color := rgb 0 0 0
+                  ]) [ (Point 40 110, Point 360 110) 
+                     , (Point 40 180, Point 360 180)
+                     , (Point 40 250, Point 360 250)
+                     , (Point 40 215, Point 360 215)
+                     ]
+
+  mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) 
+    [ (Point 40 35, Point 40 115)
+    , (Point 360 35, Point 360 115)
+    , (Point 40 180, Point 40 250)
+    , (Point 360 180, Point 360 250)
+    ]
+  mapM_ (text' dc ) [ ("При наиболее тяжёлых условиях", Point 90 270, [fontFamily := FontModern, fontShape := ShapeItalic])
+                    , ("Линия провисания нити (троса)", Point 90 150, [fontFamily := FontModern, fontShape := ShapeItalic])
+                    , ("Температура\t\t\t\t\t°С\t5", Point 40 290, [fontFamily := FontModern])
+                    , ("Толщина льда\t\t\t\tмм\t1", Point 40 310, [fontFamily := FontModern])
+                    , ("Давление ветра\t\t\t\tН/м\t206", Point 40 330, [fontFamily := FontModern])
+                    , ("Допускаемое значение силы\tН\t4840", Point 40 350, [fontFamily := FontModern])
+                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 370, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
+                    , ("При экстр. низкой т-ре\t\t°С\t5", Point 40 390, [fontFamily := FontModern, fontShape := ShapeItalic])
+                    , ("Сила натяжения нити\t\tН\t4840", Point 40 410, [fontFamily := FontModern])
+                    , ("Допускаемое значение силы\tН\t4840", Point 40 430, [fontFamily := FontModern])
+                    , ("Условие прочности выполняется (допускается перегрузка до 5%)", Point 35 450, [fontFamily := FontModern, fontSize := 6, fontWeight := WeightBold])
+                    , ("Результаты расчёта жесткости (стрелы провисания)", Point 45 470, [fontFamily := FontModern, fontSize := 8, fontShape := ShapeItalic])
+                    , ("\t\t\t\t1\t\t2\t\t3\t\t4", Point 20 490, [fontFamily := FontModern])
+                    , ("Температура\t\t-5.0\t\t-30.0\t40.0\t\t15.0", Point 20 510, [fontFamily := FontModern])
+                    , ("Коэфф. провеса\t40.00\t44.61\t35.76\t38.91", Point 20 530, [fontFamily := FontModern])
+                    , ("Провисание нити\t0.25\t\t0.22\t\t0.28\t\t0.26", Point 20 550, [fontFamily := FontModern])
+                    ]
+  return ()
+     
+text' dc (t,p1,prop) = drawText dc t p1 prop
+line' dc t (p1, p2) = line dc p1 p2 t
