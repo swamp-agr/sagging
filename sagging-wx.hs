@@ -373,11 +373,11 @@ printResult res err f = do
   set f [layout := minsize (sz 400 650) $ hfill $ vfill $ widget p]
 
 fileSave p res = 
-  do t <- fileSaveDialog p True True "Сохранить" [("Любое изображение", [ 
+  do t <- fileSaveDialog p True True "Сохранить" [("Ping File, *.png", [ 
                                                       "*.png"
                                                       , "*.tiff"
                                                       , "*.jpg"
-                                                      ,  "*.bmp" ])] "" "test1.png"
+                                                      ,  "*.bmp" ])] "" "example.png"
      mdc <- memoryDCCreate
      mdcbmp <- bitmapCreateEmpty (sz 400 600) (-1)
      memoryDCSelectObject mdc mdcbmp
@@ -408,7 +408,7 @@ drawItems' a dc = do
                   , penKind := PenSolid
                   , penWidth := 3
                   , color := rgb 0 0 255
-                  ]) [ (Point 40 40, Point 360 40) 
+                  ]) [ (Point 40 50, Point 360 50) 
                      ]
   
   mapM_ (line' dc [ penCap := CapButt
@@ -422,8 +422,8 @@ drawItems' a dc = do
                      ]
 
   mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) 
-    [ (Point 40 35, Point 40 115)
-    , (Point 360 35, Point 360 115)
+    [ (Point 40 45, Point 40 115)
+    , (Point 360 45, Point 360 115)
     , (Point 40 180, Point 40 250)
     , (Point 360 180, Point 360 250)
     ]
@@ -461,7 +461,7 @@ drawItems' a dc = do
       half' = max' / 2
       ly = abs (head ay - last ay)
       bx = map (floor . (+180.0) . (/ lx) . (* 70.0) . negate) ax
-      by = map (floor . (+40.0) . (/ ly) . (* 320.0)) ay
+      by = map (floor . (+50.0) . (/ ly) . (* 320.0)) ay
       cz = zip by bx
       pts = map (\(x,y) -> Point x y) cz
     in do polyline dc pts [ penCap := CapButt
@@ -472,31 +472,34 @@ drawItems' a dc = do
           mapM_ (text' dc) [ (roundToStr half', Point 8 205, [fontFamily := FontModern])
                            , (roundToStr max', Point 8 240, [fontFamily := FontModern])
                            ]
+  text' dc ((++ " м") $ roundToStr $ _line $ allParams a, Point 175 90, [fontFamily := FontModern])
   -- отображение схематичных сил
-  let aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
+  let aa = map (onLine . floor . (+50.0) . (/ l) . (* 320.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
       l = (_line $ allParams a)
-      onLine a = (Point a 20, Point a 40) 
+      onLine a = (Point a 30, Point a 50) 
     in do mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
           mapM_ (arrowLine dc) aa
   -- отображение схематичных линий     
   let lforces = filter ((== IsLine) . pType) $ _force $ allParams a
       l = (_line $ allParams a)
-      aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') lforces
-      crossLine a = map (\d -> (Point (floor $ c + 7 + 3 * (d - 1)) 30, Point (floor $ c - 7 + 3 * (d - 1)) 50)) [0 .. fromIntegral (b-1)]
-        where   c = ((+40.0) . (/l) . (* 320.0) . pCoord') a
+      aa = map (onLine . floor . (+50.0) . (/ l) . (* 320.0) . pCoord') lforces
+      crossLine a = map (\d -> (Point (floor $ c + 7 + 3 * (d - 1)) 40, Point (floor $ c - 7 + 3 * (d - 1)) 60)) [0 .. fromIntegral (b-1)]
+        where   c = ((+50.0) . (/l) . (* 320.0) . pCoord') a
                 b = pNumLines a
       ab = concat $ map (crossLine) lforces
-      onLine a = (Point a 20, Point a 40)
-      {-lXLine a  = (a, cm 2.3)
-      lXForce a = (a, cm 1.0)
-      la = map (lXLine . cm . (+40.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      onLine a = (Point a 30, Point a 50)
+      lXLine a  = Point a 60
+      lXForce a = Point a 10
+      la = map (lXLine . floor . (+35.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
       tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
-      fa = map (lXForce . cm . (+40.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      fa = map (lXForce . floor . (+35.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
       tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
-      drawText a = createTextItem canv [position (fst a), text (snd a), font (Helvetica, 10::Int)]-}
-    in do mapM (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
+    in do mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
           mapM_ (arrowLine dc) aa
-          mapM (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 1, color := rgb 0 0 0]) ab
+          mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 1, color := rgb 0 0 0]) ab
+          mapM_ (text' dc) $ zip3 tla la $ repeat [fontFamily := FontModern]
+          mapM_ (text' dc) $ zip3 tfa fa $ repeat [fontFamily := FontModern]
+
 
 
   return ()
