@@ -176,10 +176,10 @@ extractInitial init1 fiberType fiberDelta init2 forceCount init3
 getOutParams :: InputParams -> Frame () -> IO ()
 getOutParams a b
   | (filter (/= Nothing) $ pErrors a) /= [] = 
-    do set b [text := "!!! ОШИБКА !!!"]
+    do set b [text := "!!! ОШИБКА !!!", clientSize := sz 200 200]
        a' <- staticText b [text := concat $ intersperse "\n" $ (filter (/= "") $ map fromMaybe $ pErrors a)]
-       b3 <- button b [ text := "Выход", on command := close b]
-       set b [ layout := margin 1 $ minsize (sz 300 200) $ column 1 [floatCenter $ minsize (sz 350 200) $ widget a', floatCenter $  widget b3 ] ]
+       b3 <- button b [ text := "Выход", on command := close b, position := Point 100 200]
+       set b [ layout := margin 1 $ minsize (sz 200 200) $ column 1 [floatCenter $ minsize (sz 200 200) $ widget a', floatCenter $  widget b3 ] ]
        return ()
   | otherwise = 
     do print "1"
@@ -205,67 +205,6 @@ getOutParams a b
                print' e3
                print' o4-}
        return ()
-
-                   
-{-
-printResult :: CResult -> OverLoadError -> Frame () -> IO ()
-printResult a Nothing b = 
-  do p <- panel b []
-     canv <- newCanvas p [size := (sz 14 18), background := "white"]
-     
-     -- нить
-     createLine canv [coord [(cm 2, cm 2), (cm 12, cm 2)],                           
-                      outlinewidth (mm 1), filling "blue"]
-     -- насечки
-     createLine canv [coord [(cm 2, cm 1.7), (cm 2, cm 2.3)], filling "black", outlinewidth (mm 1)]
-     createLine canv [coord [(cm 12, cm 1.7), (cm 12, cm 2.3)], filling "black", outlinewidth (mm 1)]
-     -- дополнительные линии
-     createLine canv [coord [(cm 2, cm 2), (cm 2, cm 4.1)], filling "black"]
-     createLine canv [coord [(cm 12, cm 2), (cm 12, cm 4.1)], filling "black"]
-     createLine canv [coord [(cm 2, cm 4), (cm 12, cm 4)], filling "black", arrowstyle BothEnds]
-     let aa = zip (map cm $ repeat 2.0) (map (cm) [1.7, 1.8 .. 2.3])
-         az = zip (map cm $ repeat 1.7) (map (cm) [1.4, 1.5 .. 2.0]) 
-              
-         ba = zip (map cm $ repeat 12.0) (map (cm) [1.7, 1.8 .. 2.3])
-         bz = zip (map cm $ repeat 12.3) (map (cm) [2.0, 2.1 .. 2.6]) 
-         mapp [] [] = []
-         mapp (a:as) (b:bs) = [[a,b]] ++ mapp as bs
-         crd1 = mapp aa az
-         crd2 = mapp ba bz
-         crLine a b = createLine a [coord b, filling "black"]
-       in do mapM_ (crLine canv) crd1  
-             mapM_ (crLine canv) crd2 
-
-     -- отображение схематичных сил
-     let aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
-         l = (_line $ allParams a)
-         onLine a = [(a, cm 1.3), (a, cm 2)]
-         lConf a = [coord a, filling "black", arrowstyle LastEnd]
-       in do mapM_ (createLine canv) aa
-
-     -- отображение схематичных линий        
-     let lConf a = [coord a, filling "black", arrowstyle LastEnd]        
-         rConf = map (\a -> [coord a, filling "black"])
-         lforces = filter ((== IsLine) . pType) $ _force $ allParams a
-         l = (_line $ allParams a)
-         aa = map (lConf . onLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') lforces
-         crossLine a = map (\d -> [(cm $ c + 0.2 + 0.1 * (d - 1), cm 1.5), (cm $ c - 0.2 + 0.1 * (d - 1), cm 2.5)]) [0 .. fromIntegral (b-1)]
-           where   c = ((+2.0) . (/l) . (* 10.0) . pCoord') a
-                   b = pNumLines a
-         ab = concat $ map (rConf . crossLine) lforces
-         onLine a = [(a, cm 1.3), (a, cm 2)]
-         lXLine a  = (a, cm 2.3)
-         lXForce a = (a, cm 1.0)
-         la = map (lXLine . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams a
-         tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
-         fa = map (lXForce . cm . (+2.0) . (/ l) . (* 10.0) . pCoord') $ _force $ allParams 
-         tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
-         drawText a = createTextItem canv [position (fst a), text (snd a), font (Helvetica, 10::Int)]
-       in do mapM (createLine canv) aa
-             mapM (createLine canv) ab
-             mapM drawText $ zip la tla
-             mapM drawText $ zip fa tfa             
--}
 
 rowToInit :: GRow -> [AConf] -> IO InitialValue
 rowToInit (GRow1 a _ c) d = do
@@ -332,7 +271,7 @@ hello
        mapM_ (\(a,b) -> set a [on command := mapM_ (\x -> set (x !! b) [enabled :~ not]) _r21]) $ zip cb [0..]
        set (gButton5 r31) [on command := enableByChange r31 _r32]
 
-       set f [layout := margin 10 $ column 5 [ floatCenter (widget title)
+       set f [layout := minsize (sz 900 400) $ margin 10 $ column 5 [ floatCenter (widget title)
                                  , row 1 $ [boxed "Параметры" (floatLeft $ 
                                              row 2 [ grid 5 5 l11 
                                                    , grid 5 5 [[hspace 10]]
@@ -359,7 +298,7 @@ fromMaybe :: (Maybe String) -> String
 fromMaybe Nothing = ""
 fromMaybe (Just a) = a
 
-printResult res err f = do 
+printResult res Nothing f = do 
   set f [text := "Результат", clientSize := sz 400 650]
   p <- panel f [on paint := drawItems res, position := pt 0 0, clientSize := sz 400 650]
 
@@ -371,6 +310,16 @@ printResult res err f = do
                  , position := pt 250 600
                  ]
   set f [layout := minsize (sz 400 650) $ hfill $ vfill $ widget p]
+
+printResult _ err f = do
+  set f [text := "!!! ОШИБКА !!!"]
+  t <- staticText f [text := (fromMaybe err), clientSize := sz 300 200]
+  b2 <- button f [ text := "Выход"
+                 , on command := close f
+                 , position := pt 100 200
+                 ]
+  set f [layout := minsize (sz 300 200) $ hfill $ vfill $ column 1 $ [floatCenter $ widget t, floatCenter $ widget b2]]
+
 
 fileSave p res = 
   do t <- fileSaveDialog p True True "Сохранить" [("Ping File, *.png", [ 
