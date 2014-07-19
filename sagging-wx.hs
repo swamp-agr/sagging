@@ -472,6 +472,32 @@ drawItems' a dc = do
           mapM_ (text' dc) [ (roundToStr half', Point 8 205, [fontFamily := FontModern])
                            , (roundToStr max', Point 8 240, [fontFamily := FontModern])
                            ]
+  -- отображение схематичных сил
+  let aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
+      l = (_line $ allParams a)
+      onLine a = (Point a 20, Point a 40) 
+    in do mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
+          mapM_ (arrowLine dc) aa
+  -- отображение схематичных линий     
+  let lforces = filter ((== IsLine) . pType) $ _force $ allParams a
+      l = (_line $ allParams a)
+      aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') lforces
+      crossLine a = map (\d -> (Point (floor $ c + 7 + 3 * (d - 1)) 30, Point (floor $ c - 7 + 3 * (d - 1)) 50)) [0 .. fromIntegral (b-1)]
+        where   c = ((+40.0) . (/l) . (* 320.0) . pCoord') a
+                b = pNumLines a
+      ab = concat $ map (crossLine) lforces
+      onLine a = (Point a 20, Point a 40)
+      {-lXLine a  = (a, cm 2.3)
+      lXForce a = (a, cm 1.0)
+      la = map (lXLine . cm . (+40.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
+      fa = map (lXForce . cm . (+40.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
+      drawText a = createTextItem canv [position (fst a), text (snd a), font (Helvetica, 10::Int)]-}
+    in do mapM (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
+          mapM_ (arrowLine dc) aa
+          mapM (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 1, color := rgb 0 0 0]) ab
+
 
   return ()
      
@@ -480,3 +506,9 @@ line' dc t (p1, p2) = line dc p1 p2 t
 
 roundToStr :: (PrintfArg a, Floating a) => a -> String
 roundToStr f = printf "%0.2f" f
+
+arrowLine dc (a,b) = polygon dc [leftEnd, rightEnd, b] [color := rgb 0 0 0]
+  where leftEnd = Point (floor $ (-) (fromIntegral $ pointX b) (deltaY / 2)) (pointY endpoint)
+        rightEnd = Point (floor $ (+) (fromIntegral $ pointX b) (deltaY / 2)) (pointY endpoint)
+        endpoint = Point (pointX b) (floor $ (fromIntegral $ pointY b) - deltaY)
+        deltaY = 0.3 * (fromIntegral $ (pointY b) - (pointY a))
