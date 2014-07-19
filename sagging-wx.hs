@@ -239,7 +239,7 @@ main
 
 
 hello 
-  = do f     <- frame    [text := "Программа расчёта однонитевых тросовых подвесок сети наружного освещения с учётом ветровых, ледовых и температурных нагрузок", clientSize := sz 600 680]
+  = do f     <- frame    [text := "Программа расчёта однонитевых тросовых подвесок сети наружного освещения", clientSize := sz 600 680]
 --       p <- panel f [] 9
        title <- staticText f [text := "Программа расчёта однонитевых тросовых\n    подвесок сети наружного освещения"]
 
@@ -410,7 +410,7 @@ drawItems' a dc = do
       half' = max' / 2
       ly = abs (head ay - last ay)
       bx = map (floor . (+180.0) . (/ lx) . (* 70.0) . negate) ax
-      by = map (floor . (+50.0) . (/ ly) . (* 320.0)) ay
+      by = map (floor . (+40.0) . (/ ly) . (* 320.0)) ay
       cz = zip by bx
       pts = map (\(x,y) -> Point x y) cz
     in do polyline dc pts [ penCap := CapButt
@@ -423,7 +423,7 @@ drawItems' a dc = do
                            ]
   text' dc ((++ " м") $ roundToStr $ _line $ allParams a, Point 175 90, [fontFamily := FontModern])
   -- отображение схематичных сил
-  let aa = map (onLine . floor . (+50.0) . (/ l) . (* 320.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
+  let aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') (filter ((== IsForce) . pType) $ _force $ allParams a)
       l = (_line $ allParams a)
       onLine a = (Point a 30, Point a 50) 
     in do mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
@@ -431,17 +431,17 @@ drawItems' a dc = do
   -- отображение схематичных линий     
   let lforces = filter ((== IsLine) . pType) $ _force $ allParams a
       l = (_line $ allParams a)
-      aa = map (onLine . floor . (+50.0) . (/ l) . (* 320.0) . pCoord') lforces
+      aa = map (onLine . floor . (+40.0) . (/ l) . (* 320.0) . pCoord') lforces
       crossLine a = map (\d -> (Point (floor $ c + 7 + 3 * (d - 1)) 40, Point (floor $ c - 7 + 3 * (d - 1)) 60)) [0 .. fromIntegral (b-1)]
-        where   c = ((+50.0) . (/l) . (* 320.0) . pCoord') a
+        where   c = ((+40.0) . (/l) . (* 320.0) . pCoord') a
                 b = pNumLines a
       ab = concat $ map (crossLine) lforces
       onLine a = (Point a 30, Point a 50)
       lXLine a  = Point a 60
       lXForce a = Point a 10
-      la = map (lXLine . floor . (+35.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      la = map (lXLine . floor . (+25.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
       tla = map ((++ " м") . roundToStr . pCoord') $ _force $ allParams a
-      fa = map (lXForce . floor . (+35.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
+      fa = map (lXForce . floor . (+25.0) . (/ l) . (* 320.0) . pCoord') $ _force $ allParams a
       tfa = map ((++ " кг") . roundToStr . weightFromForce . pForce') $ _force $ allParams a
     in do mapM_ (line' dc [penCap := CapButt, penKind := PenSolid, penWidth := 2, color := rgb 0 0 0]) aa
           mapM_ (arrowLine dc) aa
