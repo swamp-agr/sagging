@@ -11,6 +11,7 @@ import Data.ByteString.Char8 (putStr)
 import Data.ByteString.UTF8 (fromString)
 import Data.List (transpose, intersperse)
 import Text.Printf 
+import Control.Concurrent
 
 print' = putStr . fromString
 
@@ -142,7 +143,7 @@ concatRowF a = [ (GRow4 n1 d1 x), (GRow4 n2 d2 y) ]
 rowToInitBy (a,b,c) = rowToInit (a !! b) c
 rowToInitLBy (a,b,c) = rowToInitL (a !! b) c
 
-extractInitial init1 fiberType fiberDelta init2 forceCount init3
+extractInitial wm init1 fiberType fiberDelta init2 forceCount init3
   = do t1 <- (mapM rowToInitBy $ zip3 (repeat $ init1 ++ [fiberType, fiberDelta
                                                          , forceCount]) [0..] 
                                               initRestrictions)
@@ -169,9 +170,21 @@ extractInitial init1 fiberType fiberDelta init2 forceCount init3
              (forceConditions initForces initLines (t1 !! 9))
        let procParams = processInitConditions initConds
        let aParams = getAllParams procParams
-       b1 <- frame []
+           
+       b1 <- destroyFrame wm
        print procParams
        getOutParams procParams b1
+
+destroyFrame wm = do
+  a <- takeMVar wm
+  case a of
+    Just b -> do close b
+                 b1 <- frame []
+                 putMVar wm (Just b1)
+                 return b1
+    Nothing -> do b1 <- frame []
+                  putMVar wm (Just b1)
+                  return b1
 
 getOutParams :: InputParams -> Frame () -> IO ()
 getOutParams a b
@@ -242,7 +255,8 @@ hello
   = do f     <- frame    [text := "Программа расчёта однонитевых тросовых подвесок сети наружного освещения", clientSize := sz 600 680]
 --       p <- panel f [] 9
        title <- staticText f [text := "Программа расчёта однонитевых тросовых\n    подвесок сети наружного освещения"]
-
+       windowMgr <- newEmptyMVar
+       putMVar windowMgr (Nothing :: Maybe (Frame ()))
        r11 <- mapM (rowToGUI f) [ a1, a2, a3, a4, a5, a6, a7 ]
        l11 <- mapM rowToLayout r11
        r12 <- rowToGUI f a8
@@ -292,7 +306,7 @@ hello
                                  ] 
              ] 
         
-       set eval [on command := extractInitial r11 r12 r21 (tail r22) r31 r32]
+       set eval [on command := extractInitial windowMgr r11 r12 r21 (tail r22) r31 r32]
        
 fromMaybe :: (Maybe String) -> String
 fromMaybe Nothing = ""
